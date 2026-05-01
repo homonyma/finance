@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Investiční Tracker</title>
+    <style>
+        :root {
+            --primary: #ffffff;
+            --accent: #3b82f6;
+            --bg: #000000;
+            --card: #111111;
+            --input-bg: #1c1c1e;
+            --text: #ffffff;
+            --text-dim: #8e8e93;
+            --profit: #22c55e;
+            --danger: #ef4444;
+            --total: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .main-display {
+            background: var(--card);
+            padding: 25px 15px;
+            border-radius: 32px;
+            text-align: center;
+            border: 1px solid #222;
+        }
+
+        .label-sm { 
+            font-size: 0.65rem; 
+            text-transform: uppercase; 
+            color: var(--primary); 
+            letter-spacing: 1px; 
+            font-weight: 700; 
+            margin-bottom: 5px;
+            margin-top: 20px;
+        }
+        .label-sm:first-child { margin-top: 0; }
+
+        /* Sjednocená velikost pro všechna hlavní čísla */
+        .main-val { 
+            font-size: 2.3rem; 
+            font-weight: 800; 
+            font-variant-numeric: tabular-nums; 
+            line-height: 1.1; 
+            letter-spacing: -1px; 
+            display: block;
+        }
+        
+        #amount { color: var(--text); }
+        #profitValue { color: var(--profit); }
+        #rentaValue { color: var(--accent); }
+        #savingsValue { color: var(--text); }
+        #totalValue { color: var(--total); }
+
+        .time-counter {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #222;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+        .time-val { font-size: 0.65rem; font-weight: 400; color: #444; }
+        .time-label { font-size: 0.4rem; color: #222; text-transform: uppercase; }
+
+        .projections {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 24px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            text-align: center;
+            margin-top: 10px;
+        }
+        .proj-item { display: flex; flex-direction: column; gap: 2px; border-right: 1px solid #222; }
+        .proj-item:last-child { border-right: none; }
+        .proj-year { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .proj-val { font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 2px; }
+        .proj-sub { font-size: 0.55rem; font-weight: 400; }
+        .p-profit { color: var(--profit); }
+        .p-renta { color: var(--accent); }
+
+        #settingsToggle {
+            background: transparent;
+            color: #333;
+            border: none;
+            padding: 15px;
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+            text-decoration: underline;
+        }
+
+        #settingsContent {
+            display: none;
+            background: var(--card);
+            padding: 20px;
+            border-radius: 24px;
+            flex-direction: column;
+            gap: 12px;
+            border: 1px solid #222;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 0.7rem; color: var(--text-dim); }
+        input {
+            background: var(--input-bg);
+            border: 1px solid #333;
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .add-btn { background: #10b981; color: white; border: none; padding: 10px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 5px; }
+        .history-box { background: #000; border-radius: 10px; padding: 8px; max-height: 120px; overflow-y: auto; margin-top: 10px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; padding: 5px 0; border-bottom: 1px solid #111; }
+        .del-btn { color: var(--danger); font-size: 0.9rem; padding: 0 5px; cursor: pointer; border: none; background: transparent; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="main-display">
+        <div class="label-sm">Portfolio</div>
+        <div id="amount" class="main-val">0,00 Kč</div>
+        
+        <div class="label-sm">Zhodnocení</div>
+        <div id="profitValue" class="main-val">+ 0,00 Kč</div>
+
+        <div class="label-sm">Renta</div>
+        <div id="rentaValue" class="main-val">0,00 Kč</div>
+
+        <div class="label-sm">Spořící účet</div>
+        <div id="savingsValue" class="main-val">0,00 Kč</div>
+
+        <div class="label-sm">Celkem</div>
+        <div id="totalValue" class="main-val">0,00 Kč</div>
+        
+        <div class="time-counter">
+            <div class="time-unit"><span class="time-val" id="d">0</span><span class="time-label">Dní</span></div>
+            <div class="time-unit"><span class="time-val" id="h">0</span><span class="time-label">Hod</span></div>
+            <div class="time-unit"><span class="time-val" id="m">0</span><span class="time-label">Min</span></div>
+            <div class="time-unit"><span class="time-val" id="s">0</span><span class="time-label">Sek</span></div>
+        </div>
+    </div>
+
+    <div class="projections">
+        <div class="proj-item">
+            <span class="proj-year">5 let</span>
+            <span class="proj-val" id="v5">-</span>
+            <span class="proj-sub p-profit" id="v5-p">-</span>
+            <span class="proj-sub p-renta" id="v5-r">-</span>
+        </div>
+        <div class="proj-item">
+            <span class="proj-year">10 let</span>
+            <span class="proj-val" id="v10">-</span>
+            <span class="proj-sub p-profit" id="v10-p">-</span>
+            <span class="proj-sub p-renta" id="v10-r">-</span>
+        </div>
+        <div class="proj-item">
+            <span class="proj-year">15 let</span>
+            <span class="proj-val" id="v15">-</span>
+            <span class="proj-sub p-profit" id="v15-p">-</span>
+            <span class="proj-sub p-renta" id="v15-r">-</span>
+        </div>
+    </div>
+
+    <button id="settingsToggle" onclick="toggleSettings()">nastavení parametrů</button>
+
+    <div id="settingsContent">
+        <div class="field"><label>Základní investiční vklad (Kč)</label><input type="number" id="p" value="1000000"></div>
+        <div class="field"><label>Roční úrok (%)</label><input type="number" id="r" value="8" step="0.1"></div>
+        <div class="field"><label>Spořící účet (Kč)</label><input type="number" id="s_account" value="0"></div>
+        
+        <div class="field" style="margin-top: 10px; border-top: 1px solid #222; padding-top: 15px;">
+            <label>Přidat vklad do Portfolia (Nemění čas)</label>
+            <input type="number" id="add_amount" placeholder="Kč">
+            <button class="add-btn" onclick="addDeposit()">Přidat</button>
+        </div>
+        <div id="historyList" class="history-box"></div>
+    </div>
+</div>
+
+<script>
+    const formatter = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', maximumFractionDigits: 0 });
+    const precise = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK', minimumFractionDigits: 2 });
+
+    function toggleSettings() {
+        const content = document.getElementById('settingsContent');
+        const btn = document.getElementById('settingsToggle');
+        if (content.style.display === "flex") {
+            content.style.display = "none";
+            btn.innerText = 'nastavení parametrů';
+        } else {
+            content.style.display = "flex";
+            btn.innerText = 'zavřít nastavení';
+        }
+    }
+
+    function addDeposit() {
+        const addEl = document.getElementById('add_amount');
+        const pEl = document.getElementById('p');
+        const val = parseFloat(addEl.value);
+        if (!isNaN(val) && val > 0) {
+            const currentP = parseFloat(pEl.value) || 0;
+            const newP = currentP + val;
+            pEl.value = newP;
+            localStorage.setItem('p', newP);
+            const history = JSON.parse(localStorage.getItem('depositHistory') || "[]");
+            history.unshift({ id: Date.now(), date: new Date().toLocaleDateString('cs-CZ'), amount: val });
+            localStorage.setItem('depositHistory', JSON.stringify(history));
+            addEl.value = "";
+            renderHistory();
+            updateProjections();
+        }
+    }
+
+    function deleteHistory(id, amount) {
+        let history = JSON.parse(localStorage.getItem('depositHistory') || "[]");
+        history = history.filter(item => item.id !== id);
+        localStorage.setItem('depositHistory', JSON.stringify(history));
+        const pEl = document.getElementById('p');
+        const newP = (parseFloat(pEl.value) || 0) - amount;
+        pEl.value = (newP < 0) ? 0 : newP;
+        localStorage.setItem('p', pEl.value);
+        renderHistory();
+        updateProjections();
+    }
+
+    function renderHistory() {
+        const history = JSON.parse(localStorage.getItem('depositHistory') || "[]");
+        const list = document.getElementById('historyList');
+        list.innerHTML = history.length ? history.map(item => `
+            <div class="history-item">
+                <span style="color:#8e8e93">${item.date}</span>
+                <span style="color:#10b981">+ ${formatter.format(item.amount)}</span>
+                <button class="del-btn" onclick="deleteHistory(${item.id}, ${item.amount})">×</button>
+            </div>
+        `).join('') : '<div style="color:#333; font-size:0.6rem; text-align:center;">Žádná historie</div>';
+    }
+
+    function updateProjections() {
+        const P = parseFloat(document.getElementById('p').value) || 0;
+        const R = (parseFloat(document.getElementById('r').value) || 0) / 100;
+        const years = [5, 10, 15];
+        
+        years.forEach(y => {
+            const total = P * Math.pow((1 + R), y);
+            const profit = total - P;
+            const renta = (total / 100) * 10 / 12;
+            const elTotal = document.getElementById(`v${y}`);
+            const elProfit = document.getElementById(`v${y}-p`);
+            const elRenta = document.getElementById(`v${y}-r`);
+            if(elTotal) elTotal.innerText = formatter.format(total);
+            if(elProfit) elProfit.innerText = "+" + formatter.format(profit);
+            if(elRenta) elRenta.innerText = formatter.format(renta);
+        });
+    }
+
+    function tick() {
+        const P = parseFloat(document.getElementById('p').value) || 0;
+        const R = (parseFloat(document.getElementById('r').value) || 0) / 100;
+        const S = parseFloat(document.getElementById('s_account').value) || 0;
+        
+        const startTime = parseInt(localStorage.getItem('startTime')) || Date.now();
+        const diff = Math.floor((Date.now() - startTime) / 1000);
+
+        document.getElementById('d').innerText = Math.floor(diff / 86400);
+        document.getElementById('h').innerText = Math.floor((diff % 86400) / 3600);
+        document.getElementById('m').innerText = Math.floor((diff % 3600) / 60);
+        document.getElementById('s').innerText = diff % 60;
+
+        const yearsPassed = diff / 31536000;
+        const currentPortfolioValue = P * Math.pow((1 + R), yearsPassed);
+        
+        document.getElementById('amount').innerText = precise.format(currentPortfolioValue);
+        document.getElementById('profitValue').innerText = "+ " + precise.format(currentPortfolioValue - P);
+        document.getElementById('rentaValue').innerText = precise.format((currentPortfolioValue / 100) * 10 / 12);
+        document.getElementById('savingsValue').innerText = precise.format(S);
+        document.getElementById('totalValue').innerText = precise.format(currentPortfolioValue + S);
+    }
+
+    function init() {
+        if(!localStorage.getItem('startTime')) localStorage.setItem('startTime', Date.now());
+        
+        const config = [
+            { id: 'p', reset: true },
+            { id: 'r', reset: true },
+            { id: 's_account', reset: false }
+        ];
+
+        config.forEach(item => {
+            const el = document.getElementById(item.id);
+            const saved = localStorage.getItem(item.id);
+            if (saved !== null) el.value = saved;
+            
+            el.oninput = () => { 
+                localStorage.setItem(item.id, el.value); 
+                if (item.reset) {
+                    localStorage.setItem('startTime', Date.now()); 
+                    localStorage.setItem('depositHistory', "[]"); 
+                }
+                renderHistory();
+                updateProjections();
+            };
+        });
+        
+        renderHistory();
+        updateProjections();
+        setInterval(tick, 1000);
+        tick();
+    }
+    init();
+</script>
+</body>
+</html>
